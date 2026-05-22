@@ -16,7 +16,6 @@ interface SearchBarProps {
   isLoading: boolean;
 }
 
-const PANTRY_STAPLES = ["salt", "black pepper", "olive oil", "garlic", "water", "butter", "onion"];
 const DIETS = ["Vegetarian", "Vegan", "Gluten Free", "Ketogenic", "Paleo"];
 const INTOLERANCES = ["Dairy", "Peanut", "Soy", "Egg", "Seafood", "Shellfish", "Tree Nut", "Wheat"];
 
@@ -32,7 +31,6 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Filter states
-  const [activeStaples, setActiveStaples] = useState<Set<string>>(new Set());
   const [activeDiets, setActiveDiets] = useState<Set<string>>(new Set());
   const [activeIntolerances, setActiveIntolerances] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
@@ -75,15 +73,12 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
         .filter((s) => s && !allIngredients.includes(s))
         .forEach((s) => allIngredients.push(s));
     }
-    if (allIngredients.length > 0 || activeStaples.size > 0) {
+    if (allIngredients.length > 0) {
       setIngredients(allIngredients);
       setInputValue("");
       
-      // Combine typed ingredients with toggled staples
-      const combinedIngredients = Array.from(new Set([...allIngredients, ...Array.from(activeStaples)]));
-
       onSearch({
-        ingredients: combinedIngredients,
+        ingredients: allIngredients,
         diets: Array.from(activeDiets),
         intolerances: Array.from(activeIntolerances)
       });
@@ -105,9 +100,9 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
     <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
       {/* ── Input container ──────────────────────────────────────────── */}
       <div
-        className="bg-white border border-gray-300 rounded-lg p-2.5 flex items-center gap-2 flex-wrap cursor-text
-                   shadow-sm transition-shadow duration-200
-                   focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent"
+        className="bg-white border border-gray-300 rounded-xl p-2.5 flex items-center gap-2 flex-wrap cursor-text
+                   shadow-sm transition-all duration-300
+                   focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15"
         onClick={() => inputRef.current?.focus()}
       >
         <Search className="w-5 h-5 text-gray-400 ml-2 shrink-0" />
@@ -166,45 +161,17 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
         )}
       </div>
       
-      <p className="text-sm text-gray-500 mt-2 text-center">
-        Press <span className="font-semibold text-gray-700">Enter</span> to add ingredients.
+      <p className="text-sm text-gray-400 mt-2 text-center">
+        Press <span className="font-semibold text-gray-600">Enter</span> to add ingredients.
       </p>
 
-      {/* ── Pantry Staples ──────────────────────────────────────────── */}
-      <div className="mt-6 flex flex-col items-center">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Pantry Staples</span>
-        <div className="flex flex-wrap justify-center gap-2">
-          {PANTRY_STAPLES.map((staple) => {
-            // If it's already in the main ingredients list, we can visually disable it here or just treat it normally
-            const isMain = ingredients.includes(staple);
-            const isActive = activeStaples.has(staple) || isMain;
-            return (
-              <button
-                key={staple}
-                type="button"
-                onClick={() => {
-                  if (!isMain) toggleSetItem(activeStaples, staple, setActiveStaples);
-                }}
-                disabled={isMain}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border
-                  ${isActive 
-                    ? "bg-primary text-white border-primary shadow-sm" 
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  } ${isMain ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {staple}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* ── Advanced Filters Toggle ─────────────────────────────────── */}
-      <div className="mt-4 flex justify-center">
+      <div className="mt-5 flex justify-center">
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
-          className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors"
         >
           {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           Diet & Allergy Filters
@@ -213,20 +180,20 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
 
       {/* ── Filters Section ─────────────────────────────────────────── */}
       {showFilters && (
-        <div className="mt-4 p-4 border border-gray-200 rounded-xl bg-white animate-fade-in text-left">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-4 p-5 rounded-2xl bg-gray-50/80 animate-fade-in text-left border border-gray-100/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Dietary Preferences</h4>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Dietary Preferences</h4>
               <div className="flex flex-wrap gap-2">
                 {DIETS.map(diet => (
                   <button
                     key={diet}
                     type="button"
                     onClick={() => toggleSetItem(activeDiets, diet, setActiveDiets)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors border
                       ${activeDiets.has(diet)
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                   >
                     {diet}
@@ -235,17 +202,17 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Allergies & Intolerances</h4>
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Allergies & Intolerances</h4>
               <div className="flex flex-wrap gap-2">
                 {INTOLERANCES.map(intol => (
                   <button
                     key={intol}
                     type="button"
                     onClick={() => toggleSetItem(activeIntolerances, intol, setActiveIntolerances)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors border
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors border
                       ${activeIntolerances.has(intol)
-                        ? "bg-secondary text-white border-secondary"
-                        : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                        ? "bg-secondary text-white border-secondary shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
                       }`}
                   >
                     {intol}
@@ -260,13 +227,13 @@ export default function SearchBar({ onSearch, isLoading }: SearchBarProps) {
       {/* ── Generate button ─────────────────────────────────────────── */}
       <button
         type="submit"
-        disabled={isLoading || (ingredients.length === 0 && activeStaples.size === 0 && !inputValue.trim())}
+        disabled={isLoading || (ingredients.length === 0 && !inputValue.trim())}
         id="generate-recipes-btn"
-        className="mt-8 w-full py-4 px-6 rounded-xl font-semibold text-base
+        className="mt-8 w-full py-4 px-6 rounded-2xl font-bold text-base tracking-wide
                    bg-primary hover:bg-primary-hover text-white
-                   disabled:opacity-50 disabled:cursor-not-allowed
-                   shadow-sm hover:shadow-md transition-all duration-200
-                   flex items-center justify-center gap-2"
+                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
+                   shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 
+                   transition-all duration-300 flex items-center justify-center gap-2"
       >
         {isLoading ? (
           <>

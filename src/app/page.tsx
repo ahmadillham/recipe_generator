@@ -124,7 +124,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20
-                       rounded-2xl bg-gray-50 border border-gray-200
+                       rounded-2xl bg-white border border-gray-100 shadow-sm
                        mb-6"
           >
             <Refrigerator className="w-8 h-8 md:w-10 md:h-10 text-primary" />
@@ -169,8 +169,13 @@ export default function HomePage() {
       </header>
 
       {/* ── Results Section ────────────────────────────────────────── */}
-      <main className="flex-1 px-4 py-16 md:py-24">
-        <div className="max-w-6xl mx-auto">{renderResults()}</div>
+      <main className="flex-1 px-4 py-16 md:py-24 relative">
+        {/* Subtle Background Pattern for Empty State area */}
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]" 
+             style={{ backgroundImage: "radial-gradient(#000 1px, transparent 1px)", backgroundSize: "24px 24px" }} 
+        />
+        
+        <div className="max-w-6xl mx-auto relative z-10">{renderResults()}</div>
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
