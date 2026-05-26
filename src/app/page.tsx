@@ -21,20 +21,29 @@ import type { Recipe, RecipeApiResponse } from "@/types/recipe";
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<SearchFilters | null>(null);
+  const [totalResults, setTotalResults] = useState(0);
 
   // ── Fetch recipes from our secure API route ───────────────────────
-  const handleSearch = useCallback(async (filters: SearchFilters) => {
-    setIsLoading(true);
-    setError(null);
-    setHasSearched(true);
-    setRecipes([]);
+  const fetchRecipes = async (filters: SearchFilters, loadMore: boolean, currentRecipeCount: number) => {
+    if (loadMore) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setError(null);
+      setHasSearched(true);
+      setRecipes([]);
+      setCurrentFilters(filters);
+    }
 
     try {
       const params = new URLSearchParams({
         ingredients: filters.ingredients.join(","),
         number: "9",
+        offset: loadMore ? currentRecipeCount.toString() : "0"
       });
       
       if (filters.diets.length > 0) {
@@ -48,16 +57,40 @@ export default function HomePage() {
       const data: RecipeApiResponse = await response.json();
 
       if (data.error) {
-        setError(data.error);
+        if (!loadMore) setError(data.error);
       } else {
-        setRecipes(data.recipes);
+        if (loadMore) {
+          setRecipes((prev) => {
+            // Prevent duplicates just in case
+            const existingIds = new Set(prev.map(r => r.id));
+            const newRecipes = data.recipes.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newRecipes];
+          });
+        } else {
+          setRecipes(data.recipes);
+        }
+        setTotalResults(data.totalResults || 0);
       }
     } catch {
-      setError("Failed to connect. Please check your internet connection.");
+      if (!loadMore) setError("Failed to connect. Please check your internet connection.");
     } finally {
-      setIsLoading(false);
+      if (loadMore) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoading(false);
+      }
     }
+  };
+
+  const handleSearch = useCallback((filters: SearchFilters) => {
+    fetchRecipes(filters, false, 0);
   }, []);
+
+  const handleLoadMore = () => {
+    if (currentFilters) {
+      fetchRecipes(currentFilters, true, recipes.length);
+    }
+  };
 
   // ── Determine what to render in the results area ──────────────────
   const renderResults = () => {
@@ -88,16 +121,37 @@ export default function HomePage() {
     }
 
     // Recipe cards
+    const hasMore = recipes.length < totalResults;
+
     return (
       <>
         <p className="text-sm text-gray-500 mb-8 text-center animate-fade-in">
-          Found <span className="text-gray-900 font-semibold">{recipes.length}</span> recipe{recipes.length !== 1 ? "s" : ""} you can make
+          Found <span className="text-gray-900 font-semibold">{totalResults}</span> recipe{totalResults !== 1 ? "s" : ""} you can make
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {recipes.map((recipe, index) => (
             <RecipeCard key={recipe.id} recipe={recipe} index={index} />
           ))}
         </div>
+
+        {hasMore && (
+          <div className="mt-12 flex justify-center animate-fade-in">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="px-6 py-3 rounded-xl font-semibold text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Load More Recipes"
+              )}
+            </button>
+          </div>
+        )}
       </>
     );
   };

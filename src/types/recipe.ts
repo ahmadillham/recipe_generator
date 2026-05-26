@@ -36,6 +36,8 @@ export interface Recipe {
 export interface RecipeApiResponse {
   recipes: Recipe[];
   error?: string;
+  offset?: number;
+  totalResults?: number;
 }
 
 /** Extended ingredient used in the detailed recipe view */

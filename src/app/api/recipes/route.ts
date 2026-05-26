@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const diet = searchParams.get("diet");
   const intolerances = searchParams.get("intolerances");
   const number = searchParams.get("number") || "9";
+  const offset = searchParams.get("offset") || "0";
 
   // ── Validate input ───────────────────────────────────────────────
   if (!ingredients || ingredients.trim().length === 0) {
@@ -43,6 +44,7 @@ export async function GET(request: Request) {
     url.searchParams.set("sort", "min-missing-ingredients"); 
     url.searchParams.set("fillIngredients", "true");
     url.searchParams.set("ignorePantry", "true");
+    url.searchParams.set("offset", offset);
     
     if (diet) url.searchParams.set("diet", diet);
     if (intolerances) url.searchParams.set("intolerances", intolerances);
@@ -70,8 +72,10 @@ export async function GET(request: Request) {
     
     // complexSearch returns an object with a `results` array, unlike findByIngredients
     const recipes: Recipe[] = data.results || [];
+    const responseOffset = data.offset || 0;
+    const totalResults = data.totalResults || 0;
 
-    return NextResponse.json({ recipes });
+    return NextResponse.json({ recipes, offset: responseOffset, totalResults });
   } catch (error) {
     console.error("Failed to fetch recipes:", error);
     return NextResponse.json(
